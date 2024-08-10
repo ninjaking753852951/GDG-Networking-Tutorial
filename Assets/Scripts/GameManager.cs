@@ -3,12 +3,15 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using TMPro;
+using Unity.Mathematics;
+using Unity.Netcode;
+using Unity.Netcode.Components;
 using UnityEngine;
 
-public class GameManager : MonoBehaviour
+public class GameManager : NetworkBehaviour
 {
     public static GameManager instance;
-    public int[] scores;
+    NetworkList<int> scores;
     public List<Transform> spawnPoints;
 
     [Header("UI")]
@@ -24,28 +27,33 @@ public class GameManager : MonoBehaviour
             instance = this;
         else
             Destroy(gameObject);
-
-        scores = new int[playerCount];
-        tanks = GameObject.FindGameObjectsWithTag("Player").ToList();
+        
+        scores = new NetworkList<int>();
     }
 
-    // Start is called before the first frame update
     void Start()
     {
-        
+        NetworkManager.Singleton.OnClientConnectedCallback += AddPlayerScore;
+    }
+
+    void AddPlayerScore(ulong @ulong)
+    {
+        if(IsServer)
+            scores.Add(0);
     }
 
     // Update is called once per frame
     void Update()
     {
-        UpdateUI();
+        if(IsSpawned)
+            UpdateUI();
     }
 
     void UpdateUI()
     {
         string scoreboardText = "";
 
-        for (int i = 0; i < scores.Length; i++)
+        for (int i = 0; i < scores.Count; i++)
         {
             scoreboardText += "Player " + i + ": " + scores[i] + "\n";
         }
@@ -54,25 +62,27 @@ public class GameManager : MonoBehaviour
     
     public void TankDestroyed(int tankID)
     {
-        int winnerTankID = (int)Mathf.Repeat(tankID + 1, playerCount - 1);
+        int winnerTankID = (int)Mathf.Repeat(tankID + 1, playerCount);
         
-        if (winnerTankID > scores.Length - 1)
+        if (winnerTankID > scores.Count - 1)
         {
             Debug.LogError("Tank ID does NOT match valid score entry");
             return;
         }
-
+        
+        Debug.Log("hit " + winnerTankID);
+        
         scores[winnerTankID]++;
         Invoke(nameof(ResetMatch), resetMatchDelay);
     }
 
     public void ResetMatch()
     {
-        for (int i = 0; i < tanks.Count; i++)
+        for (int i = 0; i < NetworkManager.Singleton.ConnectedClientsList.Count; i++)
         {
-            tanks[i].transform.position = spawnPoints[i].position;
-            tanks[i].SetActive(true);
-            Debug.Log(tanks[i].activeSelf);
+            TankController tank = NetworkManager.Singleton.ConnectedClientsList[i].PlayerObject.GetComponent<TankController>();
+            tank.TeleportRPC(spawnPoints[i].position);
+            tank.SetActiveRPC(true);
         }
     }
 }

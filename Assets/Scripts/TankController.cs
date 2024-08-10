@@ -1,9 +1,10 @@
 using System;
 using System.Collections;
 using System.Collections.Generic;
+using Unity.Netcode;
 using UnityEngine;
 
-public class TankController : MonoBehaviour
+public class TankController : NetworkBehaviour
 {
 
     [Header("Shoot Settings")]
@@ -28,7 +29,8 @@ public class TankController : MonoBehaviour
     // Start is called before the first frame update
     void Start()
     {
-        
+        if (!IsLocalPlayer)
+            this.enabled = false;   
     }
 
     // Update is called once per frame
@@ -49,19 +51,21 @@ public class TankController : MonoBehaviour
             case 0:
                 moveInput = new Vector2(Input.GetAxisRaw("Horizontal0"), Input.GetAxisRaw("Vertical0"));
                 if(Input.GetKeyDown(KeyCode.E))
-                    Shoot();
+                    ShootRPC();
                 break;
             case 1:
                 moveInput = new Vector2(Input.GetAxisRaw("Horizontal1"), Input.GetAxisRaw("Vertical1"));
                 if(Input.GetKeyDown(KeyCode.Space))
-                    Shoot();
+                    ShootRPC();
                 break;
         }
     }
 
-    void Shoot()
+    [Rpc(SendTo.Server)]
+    void ShootRPC()
     {
-        Instantiate(bulletPrefab, shootPoint.position, shootPoint.rotation);
+        GameObject bulletClone = Instantiate(bulletPrefab, shootPoint.position, shootPoint.rotation);
+        bulletClone.GetComponent<NetworkObject>().Spawn();
     }
 
     void Move()
@@ -70,5 +74,17 @@ public class TankController : MonoBehaviour
 
         curRotation += moveInput.x * Time.fixedDeltaTime * turnSpeed * -1;
         rb.SetRotation(Quaternion.Euler(0,0,curRotation));
+    }
+
+    [Rpc(SendTo.Everyone)]
+    public void SetActiveRPC(bool active)
+    {
+        gameObject.SetActive(active);
+    }
+
+    [Rpc(SendTo.Owner)]
+    public void TeleportRPC(Vector3 pos)
+    {
+        transform.position = pos;
     }
 }

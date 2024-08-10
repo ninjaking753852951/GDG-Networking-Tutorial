@@ -1,9 +1,10 @@
 using System.Collections;
 using System.Collections.Generic;
 using Unity.Mathematics;
+using Unity.Netcode;
 using UnityEngine;
 
-public class Projectile : MonoBehaviour
+public class Projectile : NetworkBehaviour
 {
     public float speed = 5f; // Speed of the projectile
     public int maxBounces = 5;
@@ -21,6 +22,9 @@ public class Projectile : MonoBehaviour
     
     void OnCollisionEnter2D(Collision2D collision)
     {
+        if(!IsServer)
+            return;
+        
         TankController hitTank = collision.gameObject.GetComponent<TankController>();
             
         curBounces++;
@@ -44,8 +48,8 @@ public class Projectile : MonoBehaviour
     {
         if (player != null)
         {
-            player.gameObject.SetActive(false);
-            GameManager.instance.TankDestroyed(player.playerID);
+            player.SetActiveRPC(false);
+            GameManager.instance.TankDestroyed((int)player.NetworkObject.OwnerClientId);
         }
         
         Instantiate(explosionEffect, transform.position, quaternion.identity);
