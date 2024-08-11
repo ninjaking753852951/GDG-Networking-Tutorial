@@ -1,6 +1,3 @@
-using System;
-using System.Collections;
-using System.Collections.Generic;
 using Unity.Netcode;
 using Unity.Netcode.Transports.UTP;
 using UnityEngine;
@@ -9,7 +6,6 @@ public class SimpleNetworkMenu : MonoBehaviour
 {
     NetworkManager networkManager;
     string ipAddress = "127.0.0.1";
-
     void Awake()
     {
         networkManager = FindObjectOfType<NetworkManager>();
@@ -19,8 +15,7 @@ public class SimpleNetworkMenu : MonoBehaviour
     {
         if(networkManager.IsClient)
             return;
-        
-        // Set the GUI scale and style
+
         GUIStyle guiStyle = new GUIStyle(GUI.skin.button);
         guiStyle.fontSize = 20;
         GUI.matrix = Matrix4x4.TRS(Vector3.zero, Quaternion.identity, new Vector3(1.5f, 1.5f, 1));
@@ -28,7 +23,6 @@ public class SimpleNetworkMenu : MonoBehaviour
         float buttonWidth = 200;
         float buttonHeight = 40;
         float padding = 10;
-        float screenWidth = Screen.width / 1.5f; // Adjust for GUI matrix scaling
         float screenHeight = Screen.height / 1.5f; // Adjust for GUI matrix scaling
 
         float xPosition = padding; // Align to the left with padding
