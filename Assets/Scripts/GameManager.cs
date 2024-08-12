@@ -54,7 +54,7 @@ public class GameManager : MonoBehaviour
     
     public void TankDestroyed(int tankID)
     {
-        int winnerTankID = (int)Mathf.Repeat(tankID + 1, playerCount - 1);
+        int winnerTankID = (int)Mathf.Repeat(tankID + 1, playerCount);
         
         if (winnerTankID > scores.Length - 1)
         {
